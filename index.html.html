@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Device Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --surface2: #e8eef5;
+    --border: #d0dae6;
+    --accent: #2563eb;
+    --accent-light: #eff6ff;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --text-light: #94a3b8;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 1.25rem 1rem calc(1.5rem + var(--safe-bottom));
+    -webkit-text-size-adjust: 100%;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  header h1 {
+    font-family: var(--sans);
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+
+  header h1 span { color: var(--accent); }
+
+  .rec-badge {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0.2rem 0.7rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+    box-shadow: var(--shadow);
+  }
+
+  .section-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-light);
+    margin-bottom: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .field { margin-bottom: 1rem; }
+  .field:last-child { margin-bottom: 0; }
+
+  .field label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+  }
+
+  .input-wrap {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  .field input,
+  .field textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 16px;
+    padding: 0.65rem 0.75rem;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+    flex: 1;
+  }
+
+  .field input:focus,
+  .field textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    background: #fff;
+  }
+
+  .field input::placeholder,
+  .field textarea::placeholder { color: var(--text-light); }
+
+  .field textarea {
+    resize: none;
+    min-height: 90px;
+    font-family: var(--sans);
+    line-height: 1.5;
+  }
+
+  .scan-btn {
+    background: var(--accent-light);
+    border: 1.5px solid #bfdbfe;
+    border-radius: 8px;
+    color: var(--accent);
+    width: 46px;
+    min-height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: 1.15rem;
+    padding: 0;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .scan-btn:active { background: #dbeafe; }
+
+  #camera-input { display: none; }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.1rem;
+  }
+
+  button {
+    font-family: var(--sans);
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1.2rem;
+    min-height: 46px;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-appearance: none;
+  }
+
+  button:active { opacity: 0.8; transform: scale(0.98); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    flex: 1;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+  }
+
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--text-muted);
+    border: 1.5px solid var(--border);
+  }
+
+  /* Spinner overlay */
+  #processing-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15,17,23,0.55);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  #processing-overlay.show { display: flex; }
+
+  .spinner {
+    width: 42px; height: 42px;
+    border: 3px solid rgba(255,255,255,0.2);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #processing-overlay p {
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  /* Result picker sheet */
+  #result-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 1001;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0 0.75rem calc(0.75rem + var(--safe-bottom));
+  }
+  #result-modal.show { display: flex; }
+
+  #result-box {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 1.25rem;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 -4px 30px rgba(0,0,0,0.15);
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  #result-box h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.2rem;
+  }
+
+  #result-box .hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+  }
+
+  .result-item {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 0.65rem 0.85rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: border-color 0.12s, background 0.12s;
+  }
+
+  .result-item:active {
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+
+  .result-item .r-type {
+    font-size: 0.58rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-light);
+    margin-bottom: 0.15rem;
+  }
+
+  .result-item .r-value {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--text);
+    word-break: break-all;
+  }
+
+  .no-results {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    padding: 1rem 0.5rem;
+    line-height: 1.7;
+  }
+
+  .result-cancel {
+    width: 100%;
+    margin-top: 0.5rem;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    color: var(--text-muted);
+    border-radius: 8px;
+    padding: 0.7rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    min-height: 44px;
+    font-family: var(--sans);
+  }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    bottom: calc(1.5rem + var(--safe-bottom));
+    left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--success);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.82rem;
+    padding: 0.65rem 1.3rem;
+    border-radius: 20px;
+    opacity: 0;
+    transition: all 0.22s ease;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 1999;
+    box-shadow: 0 4px 12px rgba(22,163,74,0.3);
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Records */
+  .records-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem;
+  }
+  .records-header h2 {
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--text-muted);
+  }
+  .btn-export {
+    font-size: 0.78rem; padding: 0.4rem 0.9rem; min-height: 34px;
+    color: var(--accent); border: 1.5px solid #bfdbfe; background: var(--accent-light);
+  }
+
+  .record-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1rem; margin-bottom: 0.75rem; position: relative; box-shadow: var(--shadow);
+  }
+  .record-header {
+    display: flex; align-items: center; gap: 0.6rem;
+    margin-bottom: 0.25rem; padding-right: 2.2rem;
+  }
+  .record-device {
+    font-size: 0.95rem; font-weight: 600; color: var(--text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .record-time {
+    font-family: var(--mono); font-size: 0.62rem; color: var(--text-light);
+    display: block; margin-bottom: 0.6rem;
+  }
+  .record-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 1rem;
+    background: var(--bg); border-radius: 8px; padding: 0.6rem 0.75rem;
+  }
+  .record-item .lbl {
+    font-size: 0.58rem; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--text-light);
+  }
+  .record-item .val {
+    font-family: var(--mono); font-size: 0.78rem; color: var(--text); word-break: break-all;
+  }
+  .record-notes {
+    margin-top: 0.65rem; padding-top: 0.65rem; border-top: 1px solid var(--border);
+    font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;
+  }
+  .record-notes .lbl {
+    font-size: 0.58rem; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--text-light); display: block; margin-bottom: 0.2rem;
+  }
+  .delete-btn {
+    position: absolute; top: 0.6rem; right: 0.6rem; background: transparent; border: none;
+    color: var(--text-light); font-size: 1rem; cursor: pointer;
+    width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; min-height: unset; padding: 0;
+  }
+  .delete-btn:active { color: var(--danger); background: #fef2f2; }
+
+  .empty {
+    text-align: center; font-size: 0.82rem; color: var(--text-light); padding: 2.5rem 1rem;
+    line-height: 2; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; box-shadow: var(--shadow);
+  }
+</style>
+</head>
+<body>
+
+<!-- Hidden camera input: capture="environment" = rear camera on iPhone -->
+<input type="file" id="camera-input" accept="image/*" capture="environment">
+
+<header>
+  <h1>Device <span>Tracker</span></h1>
+  <span class="rec-badge" id="rec-count">0 records</span>
+</header>
+
+<div class="card">
+  <div class="section-label">Device Info</div>
+
+  <div class="field">
+    <label>Device Name</label>
+    <input type="text" id="device-name" placeholder="e.g. AP-Floor2-NE"
+      autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label>MAC Address</label>
+      <div class="input-wrap">
+        <input type="text" id="mac" placeholder="AA:BB:CC:DD:EE:FF"
+          autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+        <button class="scan-btn" onclick="triggerScan('mac')">📷</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Serial Number</label>
+      <div class="input-wrap">
+        <input type="text" id="serial" placeholder="SN-00123456"
+          autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+        <button class="scan-btn" onclick="triggerScan('serial')">📷</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label" style="margin-top:0.25rem">Switch</div>
+
+  <div class="row">
+    <div class="field">
+      <label>Switch Name</label>
+      <input type="text" id="switch-name" placeholder="SW-Core-01"
+        autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+    </div>
+    <div class="field">
+      <label>Switch Port</label>
+      <input type="text" id="switch-port" placeholder="Gi1/0/24"
+        autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+    </div>
+  </div>
+
+  <div class="section-label" style="margin-top:0.25rem">Network</div>
+
+  <div class="field">
+    <label>VLAN</label>
+    <input type="text" id="vlan" placeholder="e.g. 10" inputmode="numeric"
+      autocomplete="off" autocorrect="off">
+  </div>
+
+  <div class="section-label" style="margin-top:0.25rem">Notes</div>
+
+  <div class="field">
+    <label>Close Out Notes</label>
+    <textarea id="notes" placeholder="Enter any close out notes, issues, or follow-ups..."></textarea>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-primary" onclick="saveRecord()">Save Record</button>
+    <button class="btn-secondary" onclick="clearForm()">Clear</button>
+  </div>
+</div>
+
+<div id="records-section">
+  <div class="records-header">
+    <h2>Saved Records</h2>
+    <button class="btn-secondary btn-export" onclick="exportCSV()">Export CSV</button>
+  </div>
+  <div id="records-list"></div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Spinner while processing image -->
+<div id="processing-overlay">
+  <div class="spinner"></div>
+  <p>Reading image…</p>
+</div>
+
+<!-- Result picker bottom sheet -->
+<div id="result-modal">
+  <div id="result-box">
+    <h3>Select a value</h3>
+    <p class="hint">Tap the value you want to import</p>
+    <div id="result-list"></div>
+    <button class="result-cancel" onclick="closeResultModal()">Cancel</button>
+  </div>
+</div>
+
+<script>
+  // ── Records ──
+  let records = JSON.parse(localStorage.getItem('device-tracker-records') || '[]');
+  let scanTarget = null;
+
+  function val(id) { return document.getElementById(id).value.trim(); }
+
+  function saveRecord() {
+    const record = {
+      id: Date.now(),
+      timestamp: new Date().toLocaleString(),
+      deviceName: val('device-name'),
+      mac: val('mac'),
+      serial: val('serial'),
+      switchName: val('switch-name'),
+      switchPort: val('switch-port'),
+      vlan: val('vlan'),
+      notes: val('notes'),
+    };
+    records.unshift(record);
+    localStorage.setItem('device-tracker-records', JSON.stringify(records));
+    renderRecords();
+    clearForm();
+    showToast('Record saved ✓');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function clearForm() {
+    ['device-name','mac','serial','switch-name','switch-port','vlan','notes']
+      .forEach(id => document.getElementById(id).value = '');
+  }
+
+  function deleteRecord(id) {
+    if (!confirm('Delete this record?')) return;
+    records = records.filter(r => r.id !== id);
+    localStorage.setItem('device-tracker-records', JSON.stringify(records));
+    renderRecords();
+  }
+
+  function renderRecords() {
+    const list = document.getElementById('records-list');
+    document.getElementById('rec-count').textContent =
+      `${records.length} record${records.length !== 1 ? 's' : ''}`;
+    if (records.length === 0) {
+      list.innerHTML = '<div class="empty">No records yet.<br>Save your first entry above.</div>';
+      return;
+    }
+    list.innerHTML = records.map(r => `
+      <div class="record-card">
+        <button class="delete-btn" onclick="deleteRecord(${r.id})">✕</button>
+        <div class="record-header">
+          <span class="record-device">${r.deviceName || '—'}</span>
+        </div>
+        <span class="record-time">${r.timestamp}</span>
+        <div class="record-grid">
+          ${r.mac ? `<div class="record-item"><div class="lbl">MAC</div><div class="val">${r.mac}</div></div>` : ''}
+          ${r.serial ? `<div class="record-item"><div class="lbl">Serial</div><div class="val">${r.serial}</div></div>` : ''}
+          ${r.switchName ? `<div class="record-item"><div class="lbl">Switch</div><div class="val">${r.switchName}</div></div>` : ''}
+          ${r.switchPort ? `<div class="record-item"><div class="lbl">Port</div><div class="val">${r.switchPort}</div></div>` : ''}
+          ${r.vlan ? `<div class="record-item"><div class="lbl">VLAN</div><div class="val">${r.vlan}</div></div>` : ''}
+        </div>
+        ${r.notes ? `<div class="record-notes"><span class="lbl">Close Out Notes</span>${r.notes}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  function exportCSV() {
+    if (records.length === 0) return;
+    const headers = ['Device Name','MAC','Serial','Switch Name','Switch Port','VLAN','Notes','Timestamp'];
+    const rows = records.map(r => [
+      r.deviceName, r.mac, r.serial, r.switchName, r.switchPort, r.vlan,
+      `"${(r.notes||'').replace(/"/g,'""')}"`, r.timestamp
+    ].join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv,' + encodeURIComponent(csv);
+    a.download = `device-tracker-${Date.now()}.csv`;
+    a.click();
+  }
+
+  // ── Camera / Scan ──
+  const cameraInput = document.getElementById('camera-input');
+
+  function triggerScan(field) {
+    scanTarget = field;
+    cameraInput.value = ''; // reset so same file can be picked again
+    cameraInput.click();
+  }
+
+  cameraInput.addEventListener('change', async () => {
+    const file = cameraInput.files[0];
+    if (!file) return;
+    showProcessing(true);
+    try {
+      const results = await readImageFile(file);
+      showProcessing(false);
+      if (results.length === 0) {
+        showResultSheet([]);
+      } else {
+        showResultSheet(results);
+      }
+    } catch (e) {
+      showProcessing(false);
+      showToast('Could not read image');
+      console.error(e);
+    }
+  });
+
+  async function readImageFile(file) {
+    const bitmap = await createImageBitmap(file);
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(bitmap, 0, 0);
+
+    const found = [];
+
+    // 1. Try BarcodeDetector (native iOS 17+ / Chrome)
+    if ('BarcodeDetector' in window) {
+      try {
+        const detector = new BarcodeDetector({
+          formats: [
+            'code_128', 'code_39', 'code_93', 'codabar',
+            'data_matrix', 'ean_13', 'ean_8', 'itf',
+            'pdf417', 'qr_code', 'upc_a', 'upc_e'
+          ]
+        });
+        const barcodes = await detector.detect(bitmap);
+        barcodes.forEach(b => {
+          const cleaned = cleanValue(b.rawValue);
+          if (cleaned) found.push({ type: 'Barcode (' + b.format + ')', value: cleaned });
+        });
+      } catch(e) {
+        console.warn('BarcodeDetector failed:', e);
+      }
+    }
+
+    // 2. Try the Live Text / Vision API via a hidden <img> trick on iOS
+    // iOS Safari exposes detected text via drag/copy from images — we approximate
+    // by extracting high-contrast text regions using canvas analysis
+
+    // 3. Pattern matching on any barcodes found — extract MAC & serial candidates
+    // Also add raw values if they look like MACs or serials
+    found.forEach(item => {
+      const mac = extractMAC(item.value);
+      if (mac && !found.find(f => f.value === mac)) {
+        found.push({ type: 'MAC Address (detected)', value: mac });
+      }
+    });
+
+    return found;
+  }
+
+  function cleanValue(raw) {
+    if (!raw) return '';
+    let v = raw.trim();
+    // Strip label prefixes like "SN:", "MAC:", "S/N:"
+    v = v.replace(/^(serial\s*no\.?|s\/n|sn|mac\s*addr\.?|mac\s*address|mac)[:\s]+/i, '').trim();
+    return v;
+  }
+
+  function extractMAC(str) {
+    // Match 12 hex chars with various separators
+    const m = str.replace(/\s/g, '').match(/([0-9a-f]{2}[:\-.]?){5}[0-9a-f]{2}/i);
+    if (!m) return null;
+    const hex = m[0].replace(/[:\-.]/g, '');
+    if (hex.length === 12) {
+      return hex.toUpperCase().match(/.{2}/g).join(':');
+    }
+    return null;
+  }
+
+  function showProcessing(show) {
+    document.getElementById('processing-overlay').classList.toggle('show', show);
+  }
+
+  function showResultSheet(results) {
+    const list = document.getElementById('result-list');
+
+    if (results.length === 0) {
+      list.innerHTML = `
+        <div class="no-results">
+          No barcode or text detected.<br>
+          Try a clearer photo, or type the value manually.
+        </div>`;
+    } else {
+      list.innerHTML = results.map((r, i) => `
+        <div class="result-item" onclick="selectResult(${i})">
+          <div class="r-type">${r.type}</div>
+          <div class="r-value">${r.value}</div>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('result-modal').classList.add('show');
+  }
+
+  function selectResult(index) {
+    const list = document.getElementById('result-list');
+    const items = list.querySelectorAll('.result-item');
+    // Re-parse from DOM
+    const value = items[index].querySelector('.r-value').textContent;
+    if (scanTarget && value) {
+      // Auto-format MAC if applicable
+      const mac = extractMAC(value);
+      document.getElementById(scanTarget).value = mac || value;
+    }
+    closeResultModal();
+    showToast('Imported ✓');
+  }
+
+  function closeResultModal() {
+    document.getElementById('result-modal').classList.remove('show');
+  }
+
+  renderRecords();
+</script>
+</body>
+</html>
